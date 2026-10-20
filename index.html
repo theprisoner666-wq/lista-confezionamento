@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lista confezionamento</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#23577A">
+<style>
+:root{
+  --bg:#F2F4F7; --card:#FFFFFF; --ink:#16202B; --muted:#5B6878; --line:#D5DBE3;
+  --brand:#23577A; --brand-ink:#FFFFFF; --soft:#E6EEF5; --calc:#F3F5F8;
+  --err:#B42318; --err-bg:#FDECEA; --warn:#7A5200; --warn-bg:#FFF1B8; --nota:#2F5E8A; --ok:#1E7A46;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161C; --card:#1A2129; --ink:#E8EDF2; --muted:#9AA7B5; --line:#2E3946;
+    --brand:#6AAAD6; --brand-ink:#0B1520; --soft:#1F2C3A; --calc:#151B22;
+    --err:#FF8A80; --err-bg:#3A1D1B; --warn:#F2C14E; --warn-bg:#3A3018; --nota:#8DB8E0; --ok:#6FD39A;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--sans)}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1500px;margin:0 auto;padding:16px}
+header.top{background:var(--brand);color:var(--brand-ink)}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-top:10px;padding-bottom:10px}
+header.top h1{font-size:18px;margin:0;font-weight:650;flex:1}
+.badge{font-size:12px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.18)}
+.badge.prova{background:#FFD24D;color:#3B2A00}
+.status{font-size:12px;opacity:.85}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--brand)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-weight:600}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.35);color:inherit}
+.btn.small{padding:5px 9px;font-size:13px}
+.btn.danger{color:var(--err)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.muted{color:var(--muted)}
+.label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+input.field,select.field,textarea.field{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 9px;min-width:0}
+.bar select{min-width:300px;font-weight:600}
+.info{font-size:13px;margin-top:8px}
+.avviso{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.avviso b{color:inherit}
+h2.sez{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px;font-weight:650}
+.scroll{overflow-x:auto}
+table.ins{border-collapse:collapse;width:100%;min-width:1380px}
+table.ins th{font-size:11px;color:var(--muted);font-weight:650;text-align:center;padding:4px 3px;border-bottom:1px solid var(--line);line-height:1.15;vertical-align:bottom}
+table.ins td{padding:2px 2px;border-bottom:1px solid var(--line);text-align:center;font-size:14px}
+table.ins td.n{color:var(--muted);font:12px var(--mono);width:28px}
+table.ins td.calc{background:var(--calc);font-family:var(--mono);font-size:13px;white-space:nowrap;padding:2px 6px}
+table.ins td.stato{text-align:left;font-size:12px;font-weight:600;min-width:200px;white-space:normal;line-height:1.2;padding:2px 6px}
+table.ins input,table.ins select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 4px;background:var(--card);text-align:center;font-size:14px}
+table.ins input:focus,table.ins select:focus,input.field:focus,select.field:focus,textarea.field:focus{outline:2px solid var(--brand);outline-offset:0;border-color:var(--brand)}
+table.ins input.mono{font-family:var(--mono)}
+tr.scegli td{background:var(--warn-bg)}
+tr.scegli td.stato{color:var(--warn)}
+tr.errore td{background:var(--err-bg)}
+tr.errore td.stato{color:var(--err)}
+tr.nota td.stato{color:var(--nota);font-weight:400}
+tr.scegli select.pn{border:2px solid var(--warn);font-weight:700}
+.x{border:none;background:none;color:var(--muted);font-size:18px;padding:2px 6px;border-radius:6px}
+.x:hover{color:var(--err);background:var(--err-bg)}
+.hint{font-size:13px;margin-top:8px}
+.hint.err{color:var(--err)}
+.msgs{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.msg{font-size:13px;border-radius:8px;padding:7px 9px}
+.msg.err{background:var(--err-bg);color:var(--err)}
+.msg.warn{background:var(--warn-bg);color:var(--warn)}
+
+/* ---------- la lista: stessa impaginazione della lista a mano e dell'Excel ---------- */
+.foglio{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;padding:10px;overflow-x:auto;border-radius:8px}
+.foglio h1{font:22px "Arial Black",Arial,sans-serif;text-decoration:underline;text-align:center;margin:0 0 6px}
+table.lista{border-collapse:collapse;margin:0 auto;font-size:12px}
+table.lista th,table.lista td{border:1px solid #000;text-align:center;padding:2px 6px;white-space:nowrap}
+table.lista th.g{font-size:15px;padding:3px 6px}
+table.lista th.s{font-size:9px;font-weight:400;border-bottom:2px solid #000}
+table.lista td.ab{border-top:none;border-bottom:none}
+table.lista tr:last-child td.ab{border-bottom:1px solid #000}
+table.lista tr.vuota td{height:18px}
+table.lista col.c0{width:86px} table.lista col.c1{width:100px}
+.foglio .vuoto{text-align:center;color:#666;padding:30px}
+
+.login{max-width:420px;margin:60px auto;text-align:center}
+dialog{border:1px solid var(--line);border-radius:14px;padding:0;max-width:min(720px,calc(100vw - 32px));width:100%;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(10,20,30,.45)}
+dialog form{padding:18px}
+dialog h2{margin:0 0 12px;font-size:18px}
+dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+dialog textarea.field{width:100%;font:13px/1.45 var(--mono);min-height:84px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}.bar select{min-width:0;width:100%}}
+table.tab{border-collapse:collapse;font-size:14px;margin:4px 0 8px}
+table.tab td{padding:3px 12px 3px 0}
+#stampa{display:none}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#fff}
+  body>*:not(#stampa){display:none!important}
+  #stampa{display:block}
+  #stampa .foglio{padding:0}
+  #stampa thead{display:table-header-group}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>Lista confezionamento · conto lavorazione</h1>
+    <span id="b-prova" class="badge prova" hidden>MODALITÀ PROVA</span>
+    <span id="b-stato" class="status"></span>
+    <button id="b-esci" class="btn ghost small" hidden>Esci</button>
+  </div>
+</header>
+
+<section id="v-login" class="wrap" hidden>
+  <div class="card login">
+    <h2>Accesso</h2>
+    <p class="muted">Entra con l'account Google autorizzato.</p>
+    <button id="b-accedi" class="btn primary">Accedi con Google</button>
+    <p id="login-err" class="hint err"></p>
+  </div>
+</section>
+
+<main id="v-app" class="wrap" hidden>
+  <div class="card bar">
+    <div class="row">
+      <div><span class="label">Lista</span><select id="sel-lista" class="field"></select></div>
+      <div><span class="label">WEEK</span><input id="w-week" class="field" style="width:70px" inputmode="numeric"></div>
+      <div class="grow"></div>
+      <button id="b-nuova" class="btn primary">+ Nuova lista</button>
+      <button id="b-tabelle" class="btn">Tabelle cliente</button>
+      <button id="b-imp" class="btn">Impostazioni</button>
+    </div>
+    <div id="info-tab" class="info muted"></div>
+  </div>
+
+  <div id="avviso" class="card avviso" hidden></div>
+
+  <div id="inserimento" class="card" hidden>
+    <h2 class="sez">Inserimento, nell'ordine del DDT</h2>
+    <div class="scroll">
+      <table class="ins">
+        <thead><tr>
+          <th></th><th style="width:90px">NR. D.D.T.</th><th style="width:100px">PERIODO<br>(o data)</th><th style="width:170px">CODICE<br>FORNITORE (DDT)</th>
+          <th style="width:130px">P.N. CLIENTE</th><th style="width:85px">NR. PEZZI</th><th style="width:100px">TIPO</th>
+          <th>COD.<br>CONF.</th><th>PZ. X<br>CONF.</th><th>TOT. CONF<br>(buste)</th><th>OSSIDO</th>
+          <th style="width:80px">CONT.<br>(scelta)</th><th style="width:75px">Q.TA'<br>(scelta)</th><th>CONT. - Q.TA'</th><th>NR. CONT.</th><th>CONTROLLO</th><th></th>
+        </tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+    </div>
+    <datalist id="dl-periodi"><option value="RITARDO"><option value="URGENTE"><option value="B.O."></datalist>
+    <div class="row" style="margin-top:10px">
+      <button id="b-riga" class="btn small">+ Aggiungi riga</button>
+      <span class="muted" style="font-size:13px">Invio passa alla casella dopo; sui pezzi apre la riga nuova. N. DDT e periodo si ripetono dalla riga sopra.</span>
+    </div>
+    <div id="msgs" class="msgs"></div>
+  </div>
+
+  <div id="anteprima" class="card" hidden>
+    <div class="row" style="margin-bottom:10px">
+      <h2 class="sez grow" style="margin:0">La lista</h2>
+      <button id="b-excel" class="btn primary">Esporta in Excel</button>
+      <button id="b-stampa" class="btn">Stampa / PDF</button>
+      <button id="b-elimina" class="btn small danger">Elimina questa lista</button>
+    </div>
+    <div id="foglio" class="foglio"></div>
+  </div>
+</main>
+
+<div id="stampa"></div>
+
+<dialog id="d-tabelle">
+  <form method="dialog">
+    <h2>Tabelle cliente</h2>
+    <p class="muted" style="margin-top:0">Scegli il file CONFEZIONAMENTI, il file TRANSCODIFICHE o tutti e due insieme: l'app li riconosce dalle colonne.
+      Ogni file sostituisce per intero la tabella che c'era.</p>
+    <table class="tab" id="t-stato"></table>
+    <button type="button" id="t-scegli" class="btn primary">Scegli i file Excel…</button>
+    <div id="t-msg" class="msgs"></div>
+    <div class="foot"><button value="chiudi" class="btn">Chiudi</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-imp">
+  <form method="dialog">
+    <h2>Impostazioni</h2>
+    <p class="muted" style="margin-top:0;font-size:13px">Una regola per riga. Quello che segue <code>#</code> è una nota e non conta.</p>
+    <span class="label">Intestazione della lista</span>
+    <input id="i-intest" class="field" style="width:100%;margin-bottom:10px">
+    <div class="grid2">
+      <div><span class="label">Buste sostituite — <code>vecchia = nuova</code></span><textarea id="i-buste" class="field"></textarea></div>
+      <div><span class="label">Contenitori sostituiti — <code>vecchio = nuovo - quantità</code></span><textarea id="i-cont" class="field"></textarea></div>
+      <div><span class="label">Contenitori validi (gli altri si scelgono riga per riga)</span><textarea id="i-validi" class="field"></textarea></div>
+      <div><span class="label">TIPO abbreviato — <code>parola = tipo</code></span><textarea id="i-abbr" class="field"></textarea></div>
+    </div>
+    <div class="foot">
+      <button type="button" id="i-file" class="btn" style="margin-right:auto">Carica da file…</button>
+      <button value="annulla" class="btn" formnovalidate>Annulla</button>
+      <button id="i-ok" value="ok" class="btn primary">Salva</button>
+    </div>
+  </form>
+</dialog>
+
+<input id="f-xls" type="file" accept=".xls,.xlsx" multiple hidden>
+<input id="f-json" type="file" accept=".json" hidden>
+
+<script type="module">
+import { firebaseConfig } from "./firebase-config.js";
+import { norm, numero, normalizzaPeriodo, periodoTesto, leggiTabella, leggiImpostazioni, preparaTabelle, calcola, lista, ddtDella } from "./calcoli.js";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const CAMPI_CONF = 7;
+
+// ---------------------------------------------------------------- stato
+const state = { liste:{}, corrente:null, tabelle:{}, imp:null, ctx:null };
+const listaCorrente = () => state.liste[state.corrente] || null;
+
+// tabelle salvate come testo a righe e colonne separate da tabulazione (Firestore non accetta array di array)
+const daTesto = (t, numCol) => String(t||"").split("\n").filter(Boolean).map(r=>{ const c=r.split("\t"); numCol.forEach(k=>c[k]=numero(c[k])); return c; });
+const aTesto = righe => righe.map(r=>r.map(v=>v ?? "").join("\t")).join("\n");
+
+function preparaCtx(){
+  const conf = daTesto(state.tabelle.confezionamenti?.testo, [3,6]);
+  const trans = daTesto(state.tabelle.transcodifiche?.testo, []);
+  state.ctx = { tab: preparaTabelle(conf, trans), imp: leggiImpostazioni(state.imp || {}) };
+}
+
+// ---------------------------------------------------------------- archivio: Firebase, oppure il browser in modalita' prova
+// ?prova nell'indirizzo forza la modalita' prova anche con Firebase configurato (per provare senza toccare i dati veri)
+const PROVA = !firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("INCOLLA")
+           || new URLSearchParams(location.search).has("prova");
+// Il progetto Firebase e' lo stesso della mensa: raccolte col prefisso vgv_, separate dalle sue
+const RACCOLTE = { liste:"vgv_liste", tabelle:"vgv_tabelle", imp:"vgv_impostazioni" };
+let store;
+
+function storeLocale(){
+  const K="vgv-prova";
+  const leggi = () => { try{ return JSON.parse(localStorage.getItem(K)) || {}; }catch{ return {}; } };
+  const scrivi = d => { try{ localStorage.setItem(K, JSON.stringify(d)); }catch(e){ errore("Il browser non salva: "+e.message); } };
+  return {
+    async avvia(onDati){ const d=leggi(); onDati({ liste:d.liste||{}, tabelle:d.tabelle||{}, imp:d.imp||null }); },
+    async salvaLista(l){ const d=leggi(); (d.liste ||= {})[l.id]=l; scrivi(d); },
+    async eliminaLista(id){ const d=leggi(); delete (d.liste||{})[id]; scrivi(d); },
+    async salvaTabella(nome,t){ const d=leggi(); (d.tabelle ||= {})[nome]=t; scrivi(d); },
+    async salvaImp(imp){ const d=leggi(); d.imp=imp; scrivi(d); },
+  };
+}
+
+async function storeFirebase(){
+  const V="10.12.2", G=`https://www.gstatic.com/firebasejs/${V}`;
+  const { initializeApp } = await import(`${G}/firebase-app.js`);
+  const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } = await import(`${G}/firebase-auth.js`);
+  const { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, deleteDoc } = await import(`${G}/firebase-firestore.js`);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  $("b-accedi").onclick = async ()=>{ $("login-err").textContent="";
+    try{ await signInWithPopup(auth, new GoogleAuthProvider()); }catch(e){ $("login-err").textContent = "Accesso non riuscito: " + (e.code||e.message); } };
+  $("b-esci").onclick = ()=>signOut(auth);
+  let stacca = [];
+  return {
+    async avvia(onDati){
+      onAuthStateChanged(auth, user=>{
+        stacca.forEach(f=>f()); stacca=[];
+        $("v-login").hidden = !!user; $("v-app").hidden = !user; $("b-esci").hidden = !user;
+        if(!user) return;
+        let liste=null, tabelle=null, imp=undefined;
+        const pronto = ()=>{ if(liste!==null && tabelle!==null && imp!==undefined) onDati({ liste, tabelle, imp }); };
+        stacca.push(onSnapshot(collection(fs,RACCOLTE.liste), s=>{
+          if(s.metadata.hasPendingWrites && liste!==null) return;   // e' l'eco di quello che sto scrivendo
+          liste={}; s.forEach(d=>liste[d.id]=d.data()); pronto();
+        }, e=>errore("Lettura liste non riuscita: "+e.code)));
+        stacca.push(onSnapshot(collection(fs,RACCOLTE.tabelle), s=>{
+          if(s.metadata.hasPendingWrites && tabelle!==null) return;
+          tabelle={}; s.forEach(d=>tabelle[d.id]=d.data()); pronto();
+        }, e=>errore("Lettura tabelle non riuscita: "+e.code)));
+        stacca.push(onSnapshot(doc(fs,RACCOLTE.imp,"generale"), d=>{
+          if(d.metadata.hasPendingWrites && imp!==undefined) return;
+          imp = d.exists() ? d.data() : null; pronto();
+        }, e=>errore("Lettura impostazioni non riuscita: "+e.code)));
+      });
+    },
+    salvaLista: l => setDoc(doc(fs,RACCOLTE.liste,l.id), l),
+    eliminaLista: id => deleteDoc(doc(fs,RACCOLTE.liste,id)),
+    salvaTabella: (nome,t) => setDoc(doc(fs,RACCOLTE.tabelle,nome), t),
+    salvaImp: imp => setDoc(doc(fs,RACCOLTE.imp,"generale"), imp),
+  };
+}
+
+function errore(t){ $("b-stato").textContent = t; }
+
+let timer=null;
+function salvaPresto(){
+  const l = listaCorrente(); if(!l) return;
+  $("b-stato").textContent = "Salvataggio…";
+  clearTimeout(timer);
+  timer = setTimeout(async ()=>{
+    l.aggiornata = new Date().toISOString();
+    try{ await store.salvaLista(structuredClone(l)); $("b-stato").textContent = "Salvato"; }
+    catch(e){ errore("Salvataggio non riuscito: "+(e.code||e.message)); }
+  }, 500);
+}
+
+// ---------------------------------------------------------------- date e nomi
+const settimanaIso = d => { const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const g=t.getUTCDay()||7;
+  t.setUTCDate(t.getUTCDate()+4-g); const a=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-a)/864e5+1)/7); };
+const ggmm = s => { const d=new Date(s); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
+const etichetta = l => { const d=ddtDella(l.righe); return `WEEK ${l.week||"?"} · ${d.length?"DDT "+d.join(", "):"nessun DDT"} · ${ggmm(l.creata)}`; };
+const intestazione = () => state.ctx?.imp.intestazione || "LISTA";
+// la sigla del fornitore e' la parte dell'intestazione prima del trattino: titolo del primo gruppo di colonne
+const sigla = () => (state.ctx?.imp.intestazione || "DDT").split(" - ")[0].trim();
+const nomeFile = l => { const d=ddtDella(l.righe); const t=sigla();
+  return `LISTA ${t}${l.week?` - WEEK ${l.week}`:""}${d.length?` - DDT ${d.join(" - ")}`:""}`.replace(/[\\/:*?"<>|]/g,""); };
+
+// ---------------------------------------------------------------- disegno
+function disegna(){
+  preparaCtx();
+  const ids = Object.keys(state.liste).sort((a,b)=>(state.liste[b].creata||"").localeCompare(state.liste[a].creata||""));
+  if(!state.liste[state.corrente]) state.corrente = ids[0] || null;
+  $("sel-lista").innerHTML = ids.length ? ids.map(id=>`<option value="${esc(id)}" ${id===state.corrente?"selected":""}>${esc(etichetta(state.liste[id]))}</option>`).join("")
+                                        : `<option value="">— nessuna lista —</option>`;
+  const l = listaCorrente();
+  $("w-week").value = l?.week || ""; $("w-week").disabled = !l;
+  const tc = state.tabelle.confezionamenti, tt = state.tabelle.transcodifiche;
+  const d = s => s ? new Date(s).toLocaleDateString("it-IT") : "";
+  $("info-tab").innerHTML = `Confezionamenti: <b>${tc?.n ?? 0}</b> codici${tc?` (${esc(tc.file)}, ${d(tc.importato)})`:""} · `
+    + `Transcodifiche: <b>${tt?.n ?? 0}</b> coppie${tt?` (${esc(tt.file)}, ${d(tt.importato)})`:""}`
+    + (state.ctx.tab.doppi.length ? ` · <span title="${esc(state.ctx.tab.doppi.join(", "))}">${state.ctx.tab.doppi.length} P.N. doppi nel file: vale la prima riga</span>` : "");
+  const manca = [];
+  if(!tc) manca.push("il file <b>CONFEZIONAMENTI</b>");
+  if(!tt) manca.push("il file <b>TRANSCODIFICHE</b>");
+  if(!state.imp) manca.push("le <b>impostazioni</b> (sostituzioni, contenitori validi, abbreviazioni)");
+  $("avviso").hidden = !manca.length;
+  $("avviso").innerHTML = manca.length ? `Per calcolare la lista mancano ${manca.join(", ")}. Usa i pulsanti <b>Tabelle cliente</b> e <b>Impostazioni</b> qui sopra.` : "";
+  $("inserimento").hidden = $("anteprima").hidden = !l;
+  if(l){ disegnaRighe(); disegnaLista(); }
+}
+
+const opt = (v, sel, testo=v) => `<option value="${esc(v)}" ${v===sel?"selected":""}>${esc(testo)}</option>`;
+
+function rigaHtml(r, i){
+  const c = calcola(r, state.ctx);
+  const pnCella = c.possibili.length > 1
+    ? `<select class="pn" data-k="pn">${opt("", c.pn, "— scegli —")}${c.possibili.map(p=>opt(p, c.pn)).join("")}</select>`
+    : `<input class="mono" data-k="pn" value="${esc(r.pn||"")}">`;
+  const scelte = state.ctx.imp.scelte;
+  return `<tr data-i="${i}" class="${c.livello}">
+    <td class="n">${i+1}</td>
+    <td><input class="mono" data-k="ddt" value="${esc(r.ddt||"")}"></td>
+    <td><input data-k="periodo" value="${esc(periodoTesto(r.periodo))}" list="dl-periodi"></td>
+    <td><input class="mono" data-k="vgv" value="${esc(r.vgv||"")}"></td>
+    <td>${pnCella}</td>
+    <td><input class="mono" data-k="pezzi" value="${esc(r.pezzi??"")}" inputmode="numeric"></td>
+    <td><input data-k="tipo" value="${esc(r.tipo||"")}" placeholder="${esc(c.tipo)}"></td>
+    <td class="calc">${esc(c.coconf)}</td><td class="calc">${esc(c.qtacon??"")}</td><td class="calc">${esc(c.totconf)}</td><td class="calc">${esc(c.oss)}</td>
+    <td><select data-k="cont">${opt("", norm(r.cont), "")}${[...new Set([...scelte, ...(r.cont?[norm(r.cont)]:[])])].map(s=>opt(s, norm(r.cont))).join("")}</select></td>
+    <td><input class="mono" data-k="contQta" value="${esc(r.contQta??"")}" inputmode="numeric" placeholder="${r.cont?"9999":""}"></td>
+    <td class="calc">${esc(c.contq)}</td><td class="calc">${esc(c.nrcont)}</td>
+    <td class="stato">${esc(c.stato)}</td>
+    <td><button class="x" data-del="${i}" title="Cancella la riga" tabindex="-1">×</button></td>
+  </tr>`;
+}
+
+function disegnaRighe(fuoco){
+  const l = listaCorrente();
+  $("righe").innerHTML = l.righe.map(rigaHtml).join("");
+  messaggi();
+  if(fuoco) metti(fuoco.i, fuoco.k);
+}
+
+function ridisegnaRiga(i){
+  const l = listaCorrente(), tr = $("righe").querySelector(`tr[data-i="${i}"]`);
+  if(!tr) return;
+  const tmp = document.createElement("tbody"); tmp.innerHTML = rigaHtml(l.righe[i], i);
+  tr.replaceWith(tmp.firstElementChild);
+  messaggi();
+}
+
+function metti(i, k){
+  const el = $("righe").querySelector(`tr[data-i="${i}"] [data-k="${k}"]`);
+  if(el){ el.focus(); if(el.select) el.select(); }
+}
+
+function messaggi(){
+  const l = listaCorrente(); const out = [];
+  l.righe.forEach((r,i)=>{ const c = calcola(r, state.ctx);
+    if(c.livello==="scegli") out.push(["warn", `Riga ${i+1}: ${c.stato}`]);
+    if(c.livello==="errore") out.push(["err", `Riga ${i+1}: ${c.stato}`]);
+    if(c.pn && !numero(r.pezzi)) out.push(["warn", `Riga ${i+1}: mancano i pezzi.`]);
+    if(c.pn && !r.periodo) out.push(["warn", `Riga ${i+1}: manca il periodo.`]);
+  });
+  $("msgs").innerHTML = out.map(([t,s])=>`<div class="msg ${t}">${esc(s)}</div>`).join("");
+}
+
+// la lista come tabella HTML: la stessa per l'anteprima e per la stampa
+function htmlLista(l){
+  const righe = lista(l.righe, state.ctx);
+  if(!righe.length) return `<div class="vuoto">La lista compare qui appena una riga ha il P.N.</div>`;
+  const tit = ["NR. D.D.T.","DATA PROGRAM.","TIPO","P.N.","NR. PEZZI","COD. CONF.","PZ. X CONF.","TOT. CONF","OSSIDO","CONT. - Q.TA'","NR. CONT.","DATA CONS."];
+  // il punto delle migliaia anche sotto 10.000 (toLocaleString italiano scrive 1000), come nell'Excel
+  const fmt = n => n==null ? "" : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const corpo = righe.map(x=> x===null
+    ? `<tr class="vuota"><td class="ab"></td><td class="ab"></td>${"<td></td>".repeat(10)}</tr>`
+    : `<tr><td class="ab">${esc(x.ddt)}</td><td class="ab">${esc(x.periodo)}</td><td>${esc(x.tipo)}</td><td>${esc(x.pn)}</td><td>${fmt(x.pezzi)}</td>
+        <td>${esc(x.coconf)}</td><td>${esc(x.qtacon??"")}</td><td>${esc(x.totconf)}</td><td>${esc(x.oss)}</td><td>${esc(x.contq)}</td><td>${esc(x.nrcont)}</td><td></td></tr>`).join("");
+  return `<h1>${esc(intestazione())}</h1>
+    <table class="lista"><colgroup><col class="c0"><col class="c1"></colgroup><thead>
+      <tr><th class="g">${esc(sigla())}</th><th class="g">PERIODO</th><th class="g" colspan="3">PARTICOLARE</th><th class="g" colspan="4">CONFEZIONE</th><th class="g" colspan="3">CONTENITORE</th></tr>
+      <tr>${tit.map(t=>`<th class="s">${t}</th>`).join("")}</tr></thead><tbody>${corpo}</tbody></table>`;
+}
+
+let timerLista = null;
+function disegnaLista(){ const l=listaCorrente(); if(l) $("foglio").innerHTML = htmlLista(l); }
+function disegnaListaPresto(){ clearTimeout(timerLista); timerLista = setTimeout(disegnaLista, 250); }
+
+// ---------------------------------------------------------------- inserimento
+const rigaNuova = prec => ({ ddt: prec?.ddt || "", periodo: prec?.periodo || "", vgv:"", pn:"", pezzi:"", tipo:"", cont:"", contQta:"" });
+
+function aggiungiRiga(){
+  const l = listaCorrente(); if(!l) return;
+  l.righe.push(rigaNuova(l.righe[l.righe.length-1]));
+  disegnaRighe({ i:l.righe.length-1, k: l.righe.length===1 ? "ddt" : "vgv" });
+  salvaPresto();
+}
+$("b-riga").onclick = aggiungiRiga;
+
+$("righe").addEventListener("input", e=>{
+  const k = e.target.dataset.k; if(!k) return;
+  const i = +e.target.closest("tr").dataset.i, r = listaCorrente().righe[i];
+  if(k==="pn" || k==="vgv" || k==="periodo" || k==="cont") return;   // si sistemano al "change"
+  r[k] = e.target.value;
+  if(k==="pezzi" || k==="contQta" || k==="tipo"){ aggiornaCalcoli(i); }
+  disegnaListaPresto(); salvaPresto();
+});
+
+// ricalcola solo le celle grigie della riga, senza togliere il cursore dalla casella
+function aggiornaCalcoli(i){
+  const tr = $("righe").querySelector(`tr[data-i="${i}"]`);
+  const tmp = document.createElement("tbody"); tmp.innerHTML = rigaHtml(listaCorrente().righe[i], i);
+  const nuova = tmp.firstElementChild;
+  tr.className = nuova.className;
+  [...tr.children].forEach((td,j)=>{ if(td.classList.contains("calc") || td.classList.contains("stato")) td.innerHTML = nuova.children[j].innerHTML; });
+  messaggi();
+}
+
+$("righe").addEventListener("change", e=>{
+  const k = e.target.dataset.k; if(!k) return;
+  const i = +e.target.closest("tr").dataset.i, r = listaCorrente().righe[i];
+  let dopo = null;
+  if(k==="ddt"){ r.ddt = norm(e.target.value); e.target.value = r.ddt; aggiornaCalcoli(i); }
+  if(k==="periodo"){ r.periodo = normalizzaPeriodo(e.target.value); e.target.value = periodoTesto(r.periodo); }
+  if(k==="vgv"){
+    r.vgv = norm(e.target.value);
+    const p = r.vgv ? (state.ctx.tab.T.get(r.vgv) || []) : [];
+    r.pn = p.length===1 ? p[0] : ""; r.tipo = "";
+    if(r.pn) r.tipo = calcola(r, state.ctx).tipo;
+    ridisegnaRiga(i);
+    dopo = p.length===1 ? "pezzi" : "pn";
+  }
+  if(k==="pn"){
+    r.pn = norm(e.target.value); r.tipo = "";
+    if(r.pn) r.tipo = calcola(r, state.ctx).tipo;
+    ridisegnaRiga(i); dopo = "pezzi";
+  }
+  if(k==="cont"){ r.cont = norm(e.target.value); ridisegnaRiga(i); dopo = "contQta"; }
+  if(dopo) setTimeout(()=>metti(i, dopo), 0);
+  disegnaLista(); salvaPresto();
+});
+
+// Invio: casella dopo; sui pezzi (o sull'ultima) apre la riga nuova
+const ORDINE = ["ddt","periodo","vgv","pn","pezzi"];
+$("righe").addEventListener("keydown", e=>{
+  if(e.key!=="Enter") return;
+  const k = e.target.dataset.k; if(!k) return;
+  e.preventDefault();
+  e.target.dispatchEvent(new Event("change", { bubbles:true }));
+  const i = +e.target.closest("tr").dataset.i, l = listaCorrente();
+  const j = ORDINE.indexOf(k);
+  setTimeout(()=>{
+    if(k==="vgv" || k==="pn") return;                    // il "change" ha gia' spostato il cursore
+    if(j>=0 && j<ORDINE.length-1) return metti(i, ORDINE[j+1]);
+    if(i===l.righe.length-1) aggiungiRiga(); else metti(i+1, "vgv");
+  }, 0);
+});
+
+$("righe").addEventListener("click", e=>{
+  const b = e.target.closest("[data-del]"); if(!b) return;
+  const l = listaCorrente(), i = +b.dataset.del;
+  if(!confirm(`Cancello la riga ${i+1}?`)) return;
+  l.righe.splice(i,1); if(!l.righe.length) l.righe.push(rigaNuova());
+  disegnaRighe(); disegnaLista(); salvaPresto();
+});
+
+// ---------------------------------------------------------------- liste
+$("sel-lista").onchange = e=>{ state.corrente = e.target.value; disegna(); };
+$("w-week").onchange = e=>{ const l=listaCorrente(); if(!l) return; l.week = e.target.value.trim(); disegna(); salvaPresto(); };
+$("b-nuova").onclick = ()=>{
+  const id = "l" + Date.now();
+  state.liste[id] = { id, week: String(settimanaIso(new Date())), creata: new Date().toISOString(), righe:[rigaNuova()] };
+  state.corrente = id; disegna(); salvaPresto(); metti(0, "ddt");
+};
+$("b-elimina").onclick = async ()=>{
+  const l = listaCorrente(); if(!l || !confirm(`Elimino la lista ${etichetta(l)}?\nSe ti serve, esportala prima in Excel.`)) return;
+  delete state.liste[l.id]; state.corrente = null;
+  try{ await store.eliminaLista(l.id); }catch(e){ errore("Eliminazione non riuscita: "+(e.code||e.message)); }
+  disegna();
+};
+
+// ---------------------------------------------------------------- librerie Excel, caricate solo quando servono
+const libs = {};
+function carica(src, nome){
+  return libs[src] ||= new Promise((ok,ko)=>{ if(window[nome]) return ok(window[nome]);
+    const s=document.createElement("script"); s.src=src; s.onload=()=>ok(window[nome]); s.onerror=()=>ko(new Error("libreria non raggiungibile")); document.head.append(s); });
+}
+const XLSXJS  = () => carica("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js", "XLSX");
+const EXCELJS = () => carica("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js", "ExcelJS");
+
+// ---------------------------------------------------------------- tabelle del cliente
+function disegnaStatoTabelle(){
+  const r = (nome, t) => `<tr><td><b>${nome}</b></td><td>${t ? `${t.n} righe · ${esc(t.file)} · ${new Date(t.importato).toLocaleString("it-IT")}` : `<span class="muted">non ancora caricato</span>`}</td></tr>`;
+  $("t-stato").innerHTML = r("CONFEZIONAMENTI", state.tabelle.confezionamenti) + r("TRANSCODIFICHE", state.tabelle.transcodifiche);
+}
+$("b-tabelle").onclick = ()=>{ disegnaStatoTabelle(); $("t-msg").innerHTML=""; $("d-tabelle").showModal(); };
+$("t-scegli").onclick = ()=>$("f-xls").click();
+$("f-xls").addEventListener("change", async e=>{
+  const files = [...e.target.files]; e.target.value=""; if(!files.length) return;
+  const msg = (t,s)=>$("t-msg").insertAdjacentHTML("beforeend", `<div class="msg ${t}">${s}</div>`);
+  $("t-msg").innerHTML = "";
+  let XLSX; try{ XLSX = await XLSXJS(); }catch(err){ return msg("err", "Libreria Excel non raggiungibile: serve la rete."); }
+  for(const f of files){
+    try{ msg("", `Leggo ${esc(f.name)}…`);
+      const t = await importaTabella(f, XLSX);
+      $("t-msg").lastElementChild.remove();
+      msg("ok", `<b>${esc(f.name)}</b>: ${t.tipo.toUpperCase()}, ${t.n} righe importate.`);
+    }catch(err){ $("t-msg").lastElementChild?.remove(); msg("err", `<b>${esc(f.name)}</b>: ${esc(err.message)}`); }
+  }
+  disegnaStatoTabelle(); disegna();
+});
+
+async function importaTabella(f, XLSX){
+  const wb = XLSX.read(await f.arrayBuffer(), { dense:true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  // il file delle transcodifiche dichiara un milione di righe vuote: si legge solo fin dove c'e' qualcosa
+  const righe = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:null, blankrows:false });
+  const t = leggiTabella(righe);
+  if(!t.tipo) throw new Error("non riconosco il file: mancano le colonne " + (t.mancano||[]).join(", ") + " (o, per le transcodifiche, una colonna PN e una COD). Tabella non toccata.");
+  if(!t.righe.length) throw new Error("il file non ha righe. Tabella non toccata.");
+  const dati = { testo: aTesto(t.righe), n: t.righe.length, file: f.name, importato: new Date().toISOString() };
+  if(dati.testo.length > 900000) throw new Error("tabella troppo grande per l'archivio (oltre 900 KB).");
+  state.tabelle[t.tipo] = dati;
+  await store.salvaTabella(t.tipo, dati);
+  return { tipo:t.tipo, n:t.righe.length };
+}
+
+// ---------------------------------------------------------------- impostazioni
+const CAMPI_IMP = { intestazione:"i-intest", sostBuste:"i-buste", sostContenitori:"i-cont", contenitoriValidi:"i-validi", abbreviazioni:"i-abbr" };
+function riempiImp(imp){ for(const [k,id] of Object.entries(CAMPI_IMP)) $(id).value = imp?.[k] || ""; }
+$("b-imp").onclick = ()=>{ riempiImp(state.imp); $("d-imp").showModal(); };
+$("i-file").onclick = ()=>$("f-json").click();
+$("f-json").addEventListener("change", async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  try{ riempiImp(JSON.parse(await f.text())); }catch(err){ alert("File non valido: "+err.message); }
+});
+$("d-imp").addEventListener("submit", async e=>{
+  if(e.submitter?.value!=="ok") return;
+  const imp = {}; for(const [k,id] of Object.entries(CAMPI_IMP)) imp[k] = $(id).value.trim();
+  state.imp = imp;
+  try{ await store.salvaImp(imp); }catch(err){ errore("Impostazioni non salvate: "+(err.code||err.message)); }
+  disegna();
+});
+
+// ---------------------------------------------------------------- Excel, come quello che esportava Access
+$("b-excel").onclick = async ()=>{
+  const l = listaCorrente(); if(!l) return;
+  if(!avvisiPrimaDiUscire(l)) return;
+  const b=$("b-excel"); b.disabled=true; const t=b.textContent; b.textContent="Preparo il file…";
+  try{
+    const ExcelJS = await EXCELJS();
+    const buf = await listaExcel(l, ExcelJS);
+    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+    a.download = nomeFile(l)+".xlsx"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  }catch(err){ alert("File non creato: "+err.message); }
+  finally{ b.disabled=false; b.textContent=t; }
+};
+
+function avvisiPrimaDiUscire(l){
+  const c = l.righe.map(r=>calcola(r, state.ctx));
+  const senzaPn = c.filter(x=>x.vgv && !x.pn).length, senzaCont = c.filter(x=>x.pn && x.livello==="scegli").length;
+  const righe = [];
+  if(senzaPn) righe.push(`${senzaPn} righe senza P.N. restano fuori dalla lista.`);
+  if(senzaCont) righe.push(`${senzaCont} righe senza contenitore scelto: nella lista il contenitore resta vuoto.`);
+  return !righe.length || confirm(righe.join("\n") + "\n\nContinuo lo stesso?");
+}
+
+async function listaExcel(l, ExcelJS){
+  const righe = lista(l.righe, state.ctx);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("LISTA", { views:[{ zoomScale:100 }], pageSetup:{ paperSize:9, orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0,
+    horizontalCentered:true, margins:{ left:0.39, right:0.39, top:0.47, bottom:0.47, header:0.3, footer:0.3 } } });
+  ws.pageSetup.printTitlesRow = "1:3";
+  // 9,01 e non 9: ExcelJS non scrive le colonne larghe quanto il suo valore predefinito
+  [12,15,9.01,13,10,10,11,12,9.01,13,16,11].forEach((w,k)=> ws.getColumn(k+1).width = w);
+  const A = (size, extra={}) => ({ name:"Arial", size, ...extra });
+  const sottile = { style:"thin", color:{argb:"FF000000"} }, spesso = { style:"medium", color:{argb:"FF000000"} };
+  const centro = { horizontal:"center", vertical:"middle" };
+
+  ws.mergeCells("A1:L1");
+  const t = ws.getCell("A1"); t.value = intestazione(); t.font = { name:"Arial Black", size:22, underline:true }; t.alignment = centro;
+  ws.getRow(1).height = 34;
+  const gruppi = [["A2","A2",sigla()],["B2","B2","PERIODO"],["C2","E2","PARTICOLARE"],["F2","I2","CONFEZIONE"],["J2","L2","CONTENITORE"]];
+  for(const [a,b,s] of gruppi){ if(a!==b) ws.mergeCells(`${a}:${b}`); const c=ws.getCell(a); c.value=s; c.font=A(14,{bold:true}); c.alignment=centro; }
+  ["NR. D.D.T.","DATA PROGRAM.","TIPO","P.N.","NR. PEZZI","COD. CONF.","PZ. X CONF.","TOT. CONF","OSSIDO","CONT. - Q.TA'","NR. CONT.","DATA CONS."]
+    .forEach((s,k)=>{ const c=ws.getRow(3).getCell(k+1); c.value=s; c.font=A(8); c.alignment=centro; });
+  for(let r=2;r<=3;r++) for(let k=1;k<=12;k++) ws.getRow(r).getCell(k).border = { top:sottile, left:sottile, right:sottile, bottom: r===3 ? spesso : sottile };
+
+  const primo = 4, ultimo = 3 + righe.length;
+  righe.forEach((x,n)=>{
+    const row = ws.getRow(primo+n);
+    const v = x===null ? Array(12).fill(null)
+      : [x.ddt||null, x.periodo||null, x.tipo, x.pn, x.pezzi, x.coconf, x.qtacon, x.totconf, x.oss||null, x.contq, x.nrcont, null];
+    v.forEach((val,k)=>{
+      const c = row.getCell(k+1);
+      c.value = val===null || val==="" ? null : val;
+      c.font = A(10); c.alignment = centro;
+      // tutto testo tranne pezzi e pezzi per busta, come nel file a mano (i P.N. non diventano numeri)
+      if(k!==4 && k!==6 && c.value!==null) c.value = String(c.value);
+      if(k===4) c.numFmt = "#,##0";
+      // DDT e periodo senza righe orizzontali dentro il gruppo
+      c.border = k<2 ? { left:sottile, right:sottile, ...(primo+n===ultimo ? { bottom:sottile } : {}) }
+                     : { top:sottile, left:sottile, right:sottile, bottom:sottile };
+    });
+  });
+  return wb.xlsx.writeBuffer();
+}
+
+// ---------------------------------------------------------------- stampa / PDF
+$("b-stampa").onclick = ()=>{
+  const l = listaCorrente(); if(!l) return;
+  if(!avvisiPrimaDiUscire(l)) return;
+  $("stampa").innerHTML = `<div class="foglio">${htmlLista(l)}</div>`;
+  const titolo = document.title; document.title = nomeFile(l);
+  window.print(); document.title = titolo;
+};
+
+// ---------------------------------------------------------------- avvio
+(async ()=>{
+  if(PROVA){ $("b-prova").hidden = false; $("v-app").hidden = false; store = storeLocale(); }
+  else{
+    $("v-login").hidden = false;
+    try{ store = await storeFirebase(); }catch(e){ $("login-err").textContent = "Firebase non raggiungibile: " + e.message; return; }
+  }
+  await store.avvia(({ liste, tabelle, imp })=>{ state.liste = liste; state.tabelle = tabelle; state.imp = imp; disegna(); });
+})();
+if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
